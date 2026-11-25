@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>12월 언제 돼?</title>
+<style>
+  :root {
+    --ok: #2f9e6b;
+    --ok-soft: #dff3ea;
+    --no: #e5484d;
+    --no-soft: #fde4e4;
+    --line: #e6e6e9;
+    --text: #1d1d1f;
+    --sub: #6e6e73;
+    --bg: #f6f6f8;
+    --card: #ffffff;
+    --accent: #3b5bdb;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard", "Noto Sans KR", "Malgun Gothic", sans-serif;
+    font-size: 15px;
+  }
+  .wrap { max-width: 640px; margin: 0 auto; padding: 20px 12px 40px; }
+  h1 { font-size: 24px; margin: 0 0 4px; letter-spacing: -0.5px; }
+  .sub { color: var(--sub); font-size: 13px; margin: 0 0 16px; }
+  .card { background: var(--card); border-radius: 14px; padding: 14px; margin-bottom: 12px; box-shadow: 0 1px 2px rgba(0,0,0,.04); }
+
+  /* 이름 */
+  .name-row { display: flex; gap: 8px; align-items: center; }
+  .name-row input {
+    flex: 1; min-width: 0; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px;
+    font-size: 15px; outline: none;
+  }
+  .name-row input:focus { border-color: var(--accent); }
+  .btn {
+    border: 0; border-radius: 10px; padding: 10px 14px; font-size: 14px; font-weight: 600;
+    background: var(--accent); color: #fff; cursor: pointer; white-space: nowrap;
+  }
+  .btn.ghost { background: #eef0f4; color: var(--text); }
+  .btn.small { padding: 7px 10px; font-size: 13px; }
+  .me-line { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .me-line b { font-size: 16px; }
+  .hint { color: var(--sub); font-size: 13px; margin-top: 8px; }
+  .hint.warn { color: var(--no); }
+
+  /* 탭 */
+  .tabs { display: flex; background: #e9e9ee; border-radius: 12px; padding: 4px; margin-bottom: 12px; }
+  .tab {
+    flex: 1; border: 0; background: transparent; padding: 9px 0; border-radius: 9px;
+    font-size: 14px; font-weight: 600; color: var(--sub); cursor: pointer;
+  }
+  .tab.on { background: #fff; color: var(--text); box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+
+  /* 범례 */
+  .legend { display: flex; flex-wrap: wrap; gap: 12px; font-size: 12px; color: var(--sub); margin-bottom: 10px; }
+  .legend span { display: inline-flex; align-items: center; gap: 5px; }
+  .sw { width: 14px; height: 14px; border-radius: 4px; display: inline-block; border: 1px solid rgba(0,0,0,.06); }
+
+  /* 달력 */
+  .month-title { font-weight: 700; font-size: 17px; margin: 2px 0 10px; }
+  .grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+  .dow { text-align: center; font-size: 12px; color: var(--sub); padding-bottom: 2px; }
+  .dow.sun { color: var(--no); } .dow.sat { color: var(--accent); }
+  .cell { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+  .cell.empty { visibility: hidden; }
+  .dnum { font-size: 13px; font-weight: 600; padding-left: 2px; }
+  .cell.sun .dnum, .cell.hol .dnum { color: var(--no); }
+  .cell.sat .dnum { color: var(--accent); }
+  .half {
+    border: 1px solid var(--line); background: #fafafb; border-radius: 7px;
+    height: 30px; padding: 0; font-size: 11px; color: var(--sub); cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 2px;
+    font-family: inherit; transition: background .12s;
+  }
+  .half.ok { background: var(--ok); border-color: var(--ok); color: #fff; font-weight: 600; }
+  .half.no { background: var(--no-soft); border-color: #f5c2c3; color: var(--no); }
+  .half.sel { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .half.all { background: var(--ok); border-color: var(--ok); color: #fff; font-weight: 700; }
+  .half .cnt { font-weight: 600; }
+
+  /* 상세 / 결과 */
+  .section-title { font-weight: 700; margin: 0 0 10px; font-size: 15px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { padding: 6px 10px; border-radius: 999px; font-size: 13px; background: #eef0f4; }
+  .chip.ok { background: var(--ok-soft); color: #1c6b47; }
+  .chip.no { background: var(--no-soft); color: #b42328; }
+  .chip.best { background: var(--ok); color: #fff; font-weight: 600; }
+  .detail-row { display: flex; gap: 8px; margin-bottom: 8px; align-items: flex-start; }
+  .detail-row .lab { width: 48px; flex-shrink: 0; font-size: 13px; color: var(--sub); padding-top: 6px; }
+  .empty-msg { color: var(--sub); font-size: 13px; }
+
+  .people { display: flex; flex-wrap: wrap; gap: 6px; }
+  .foot { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 12px; color: var(--sub); margin-top: 6px; }
+  .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; background: #bbb; }
+  .dot.live { background: var(--ok); } .dot.err { background: var(--no); } .dot.local { background: #f0a020; }
+  .banner { background: #fff6e0; color: #8a5a00; border-radius: 10px; padding: 10px 12px; font-size: 13px; margin-bottom: 12px; line-height: 1.5; }
+  .toast {
+    position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%);
+    background: rgba(30,30,30,.92); color: #fff; padding: 10px 16px; border-radius: 10px;
+    font-size: 13px; opacity: 0; transition: opacity .2s; pointer-events: none;
+  }
+  .toast.show { opacity: 1; }
+  @media (min-width: 520px) {
+    .half { height: 34px; font-size: 12px; }
+    .dnum { font-size: 14px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>12월 언제 돼?</h1>
+  <p class="sub" id="subline">되는 시간을 눌러서 표시해 줘. 다 같이 되는 날은 아래에 모아서 보여줄게.</p>
+
+  <div class="banner" id="localBanner" hidden>
+    지금은 <b>미리보기 모드</b>라서 체크한 내용이 이 기기에만 저장돼요.
+    친구들과 같이 쓰려면 index.html 맨 아래 <code>FIREBASE_URL</code>에 주소를 넣어 주세요.
+  </div>
+
+  <!-- 이름 -->
+  <div class="card" id="nameCard">
+    <div id="nameInputBox">
+      <div class="name-row">
+        <input id="nameInput" type="text" maxlength="12" placeholder="이름 (예: 은우)" autocomplete="off">
+        <button class="btn" id="nameSave">시작</button>
+      </div>
+      <div class="hint" id="nameHint">이름을 넣으면 내 일정을 체크할 수 있어요. 같은 이름으로 들어오면 이어서 수정돼요.</div>
+    </div>
+    <div id="meBox" hidden>
+      <div class="me-line">
+        <div><b id="meName"></b> <span style="color:var(--sub);font-size:13px">으로 체크 중</span></div>
+        <button class="btn ghost small" id="nameChange">이름 바꾸기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 탭 -->
+  <div class="tabs">
+    <button class="tab on" data-mode="mine">내 일정 체크</button>
+    <button class="tab" data-mode="all">다 같이 보기</button>
+  </div>
+
+  <!-- 달력 -->
+  <div class="card">
+    <div class="month-title" id="monthTitle"></div>
+    <div class="legend" id="legend"></div>
+    <div class="grid" id="grid"></div>
+    <div class="hint" id="gridHint"></div>
+  </div>
+
+  <!-- 상세 (다 같이 보기에서 칸 눌렀을 때) -->
+  <div class="card" id="detailCard" hidden></div>
+
+  <!-- 결과 -->
+  <div class="card" id="resultCard">
+    <div class="section-title">다 같이 되는 시간</div>
+    <div id="result"></div>
+  </div>
+
+  <div class="card">
+    <div class="section-title" id="peopleTitle">참여한 사람</div>
+    <div class="people" id="people"></div>
+    <div class="foot">
+      <span id="status"><span class="dot"></span>불러오는 중</span>
+      <span style="display:flex;gap:6px">
+        <button class="btn ghost small" id="copyLink">링크 복사</button>
+        <button class="btn ghost small" id="clearMine" hidden>내 체크 지우기</button>
+      </span>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ================= 설정 =================
+// Firebase Realtime Database 주소를 따옴표 안에 붙여넣으세요.
+// 예: "https://dec-calendar-default-rtdb.asia-southeast1.firebasedatabase.app"
+// 비워 두면 이 기기에만 저장되는 미리보기 모드로 동작해요.
+const FIREBASE_URL = "";
+
+const YEAR = 2026;
+const MONTH = 12;          // 1~12
+const ROOM = "2026-12";    // 다른 달/다른 모임용으로 새로 쓰려면 이 값만 바꾸면 돼요
+const HOLIDAYS = { 25: "성탄절" };
+const POLL_MS = 4000;
+// ========================================
+
+const BASE = FIREBASE_URL.replace(/\/+$/, "");
+const LOCAL = !BASE;
+const LS_NAME = "avail-name-" + ROOM;
+const LS_DATA = "avail-data-" + ROOM;
+const DOW = ["일", "월", "화", "수", "목", "금", "토"];
+const HALF_LABEL = { am: "점심", pm: "저녁" };
+const daysInMonth = new Date(YEAR, MONTH, 0).getDate();
+const firstDow = new Date(YEAR, MONTH - 1, 1).getDay();
+
+let users = {};            // { key: { name, slots: { "5-am": "ok" | "no" } } }
+let myName = localStorage.getItem(LS_NAME) || "";
+let mode = "mine";
+let selected = null;       // "5-pm"
+let pending = 0, writeSeq = 0;
+
+const $ = (id) => document.getElementById(id);
+const keyOf = (name) => name.trim().replace(/[.#$\[\]\/]/g, "_");
+const slotKey = (d, h) => d + "-" + h;
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const dowOf = (d) => new Date(YEAR, MONTH - 1, d).getDay();
+const slotText = (d, h) => `${MONTH}/${d} (${DOW[dowOf(d)]}) ${h ? HALF_LABEL[h] : ""}`.trim();
+
+function toast(msg) {
+  const t = $("toast"); t.textContent = msg; t.classList.add("show");
+  clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove("show"), 1600);
+}
+
+function setStatus(kind, text) {
+  $("status").innerHTML = `<span class="dot ${kind}"></span>${text}`;
+}
+
+// ---------- 저장소 ----------
+async function fetchAll() {
+  if (LOCAL) {
+    try { return JSON.parse(localStorage.getItem(LS_DATA) || "{}"); } catch { return {}; }
+  }
+  const r = await fetch(`${BASE}/rooms/${encodeURIComponent(ROOM)}/users.json`, { cache: "no-store" });
+  if (!r.ok) throw new Error(r.status);
+  return (await r.json()) || {};
+}
+
+async function writeMine(patch) {
+  const key = keyOf(myName);
+  if (LOCAL) { localStorage.setItem(LS_DATA, JSON.stringify(users)); return; }
+  pending++; writeSeq++;
+  try {
+    const r = await fetch(`${BASE}/rooms/${encodeURIComponent(ROOM)}/users/${encodeURIComponent(key)}.json`, {
+      method: "PATCH", body: JSON.stringify(patch),
+    });
+    if (!r.ok) throw new Error(r.status);
+    setStatus("live", "실시간 반영 중");
+  } catch (e) {
+    setStatus("err", "저장 실패. 인터넷 연결을 확인해 주세요");
+    toast("저장이 안 됐어요. 다시 눌러 주세요");
+  } finally {
+    pending--; writeSeq++;
+  }
+}
+
+async function deleteMine() {
+  const key = keyOf(myName);
+  delete users[key];
+  render();
+  if (LOCAL) { localStorage.setItem(LS_DATA, JSON.stringify(users)); return; }
+  pending++; writeSeq++;
+  try {
+    await fetch(`${BASE}/rooms/${encodeURIComponent(ROOM)}/users/${encodeURIComponent(key)}.json`, { method: "DELETE" });
+  } finally { pending--; writeSeq++; }
+}
+
+async function refresh() {
+  if (pending > 0) return;
+  const seq = writeSeq;
+  try {
+    const data = await fetchAll();
+    if (pending > 0 || seq !== writeSeq) return;   // 그 사이 내가 바꾼 게 있으면 덮어쓰지 않기
+    users = data;
+    if (!LOCAL) setStatus("live", "실시간 반영 중");
+    render();
+  } catch (e) {
+    setStatus("err", "연결 오류. Firebase 주소와 규칙을 확인해 주세요");
+  }
+}
+
+// ---------- 체크 ----------
+function cycle(d, h) {
+  if (!myName) {
+    $("nameHint").textContent = "먼저 이름을 넣어 주세요!";
+    $("nameHint").classList.add("warn");
+    $("nameInput").focus();
+    return;
+  }
+  const key = keyOf(myName);
+  if (!users[key]) users[key] = { name: myName, slots: {} };
+  if (!users[key].slots) users[key].slots = {};
+  const sk = slotKey(d, h);
+  const cur = users[key].slots[sk];
+  const next = cur === undefined ? "ok" : cur === "ok" ? "no" : null;
+  if (next) users[key].slots[sk] = next; else delete users[key].slots[sk];
+  render();
+  writeMine({ name: myName, ["slots/" + sk]: next });
+}
+
+// ---------- 집계 ----------
+function participants() {
+  return Object.entries(users)
+    .filter(([, u]) => u && u.name)
+    .map(([k, u]) => ({ key: k, name: u.name, slots: u.slots || {} }))
+    .sort((a, b) => a.name.localeCompare(b.name, "ko"));
+}
+
+function summarize(ps, d, h) {
+  const sk = slotKey(d, h);
+  const ok = [], no = [], none = [];
+  ps.forEach((p) => {
+    const v = p.slots[sk];
+    (v === "ok" ? ok : v === "no" ? no : none).push(p.name);
+  });
+  return { ok, no, none, total: ps.length, all: ps.length > 0 && ok.length === ps.length };
+}
+
+// ---------- 그리기 ----------
+function render() {
+  const ps = participants();
+  const me = users[keyOf(myName)];
+  const mySlots = (me && me.slots) || {};
+
+  // 이름 영역
+  $("nameInputBox").hidden = !!myName;
+  $("meBox").hidden = !myName;
+  $("meName").textContent = myName;
+  $("clearMine").hidden = !myName || !me;
+
+  // 범례
+  $("legend").innerHTML = mode === "mine"
+    ? `<span><i class="sw" style="background:var(--ok)"></i>돼요</span>
+       <span><i class="sw" style="background:var(--no-soft)"></i>안 돼요</span>
+       <span><i class="sw" style="background:#fafafb"></i>아직 안 정함</span>`
+    : `<span><i class="sw" style="background:var(--ok)"></i>모두 가능</span>
+       <span><i class="sw" style="background:rgba(47,158,107,.35)"></i>일부 가능 (숫자 = 되는 사람 수)</span>`;
+
+  $("gridHint").textContent = mode === "mine"
+    ? "한 번 누르면 돼요, 두 번 누르면 안 돼요, 세 번 누르면 원래대로."
+    : "칸을 누르면 누가 되고 누가 안 되는지 보여줘요.";
+
+  // 달력
+  let html = DOW.map((w, i) => `<div class="dow ${i === 0 ? "sun" : i === 6 ? "sat" : ""}">${w}</div>`).join("");
+  for (let i = 0; i < firstDow; i++) html += `<div class="cell empty"></div>`;
+  for (let d = 1; d <= daysInMonth; d++) {
+    const w = dowOf(d);
+    const cls = [w === 0 ? "sun" : w === 6 ? "sat" : "", HOLIDAYS[d] ? "hol" : ""].join(" ");
+    html += `<div class="cell ${cls}"><div class="dnum" title="${HOLIDAYS[d] || ""}">${d}</div>`;
+    for (const h of ["am", "pm"]) {
+      const sk = slotKey(d, h);
+      const isSel = mode === "all" && selected === sk ? " sel" : "";
+      if (mode === "mine") {
+        const v = mySlots[sk];
+        const label = v === "ok" ? "✓ " + HALF_LABEL[h] : v === "no" ? "✕ " + HALF_LABEL[h] : HALF_LABEL[h];
+        html += `<button class="half ${v || ""}" data-d="${d}" data-h="${h}">${label}</button>`;
+      } else {
+        const s = summarize(ps, d, h);
+        if (s.total === 0) {
+          html += `<button class="half${isSel}" data-d="${d}" data-h="${h}">${HALF_LABEL[h]}</button>`;
+        } else if (s.all) {
+          html += `<button class="half all${isSel}" data-d="${d}" data-h="${h}">★ ${s.ok.length}</button>`;
+        } else {
+          const frac = s.ok.length / s.total;
+          const bg = s.ok.length ? `background:rgba(47,158,107,${(0.12 + frac * 0.5).toFixed(2)});border-color:transparent;color:#14532d` : "";
+          html += `<button class="half${isSel}" style="${bg}" data-d="${d}" data-h="${h}"><span class="cnt">${s.ok.length}</span>/${s.total}</button>`;
+        }
+      }
+    }
+    html += `</div>`;
+  }
+  $("grid").innerHTML = html;
+
+  renderDetail(ps);
+  renderResult(ps);
+
+  // 참여자
+  $("peopleTitle").textContent = `참여한 사람 ${ps.length}명`;
+  $("people").innerHTML = ps.length
+    ? ps.map((p) => {
+        const n = Object.keys(p.slots).length;
+        return `<span class="chip">${esc(p.name)} <span style="color:var(--sub)">· ${n}칸 체크</span></span>`;
+      }).join("")
+    : `<span class="empty-msg">아직 아무도 체크하지 않았어요.</span>`;
+}
+
+function renderDetail(ps) {
+  const card = $("detailCard");
+  if (mode !== "all" || !selected) { card.hidden = true; return; }
+  const [d, h] = selected.split("-");
+  const s = summarize(ps, +d, h);
+  const chips = (arr, cls) => arr.length ? arr.map((n) => `<span class="chip ${cls}">${esc(n)}</span>`).join("") : `<span class="empty-msg">없음</span>`;
+  card.hidden = false;
+  card.innerHTML = `
+    <div class="section-title">${MONTH}월 ${d}일 (${DOW[dowOf(+d)]}) ${HALF_LABEL[h]}${HOLIDAYS[d] ? " · " + HOLIDAYS[d] : ""}</div>
+    <div class="detail-row"><div class="lab">돼요</div><div class="chips">${chips(s.ok, "ok")}</div></div>
+    <div class="detail-row"><div class="lab">안 돼요</div><div class="chips">${chips(s.no, "no")}</div></div>
+    <div class="detail-row"><div class="lab">미정</div><div class="chips">${chips(s.none, "")}</div></div>`;
+}
+
+function renderResult(ps) {
+  const box = $("result");
+  if (ps.length === 0) { box.innerHTML = `<span class="empty-msg">체크한 사람이 생기면 여기에 정리돼요.</span>`; return; }
+
+  const allSlots = [];
+  for (let d = 1; d <= daysInMonth; d++) {
+    const am = summarize(ps, d, "am"), pm = summarize(ps, d, "pm");
+    if (am.all && pm.all) allSlots.push(`<span class="chip best">${slotText(d)} 점심·저녁 둘 다</span>`);
+    else {
+      if (am.all) allSlots.push(`<span class="chip best">${slotText(d, "am")}</span>`);
+      if (pm.all) allSlots.push(`<span class="chip best">${slotText(d, "pm")}</span>`);
+    }
+  }
+  if (allSlots.length) {
+    box.innerHTML = `<div class="hint" style="margin:0 0 8px">${ps.length}명 모두 되는 시간이에요.</div><div class="chips">${allSlots.join("")}</div>`;
+    return;
+  }
+
+  // 다 겹치는 날이 없으면 가장 많이 되는 시간 보여주기
+  const ranked = [];
+  for (let d = 1; d <= daysInMonth; d++) for (const h of ["am", "pm"]) {
+    const s = summarize(ps, d, h);
+    if (s.ok.length) ranked.push({ d, h, n: s.ok.length });
+  }
+  ranked.sort((a, b) => b.n - a.n || a.d - b.d);
+  const top = ranked.filter((r) => r.n === (ranked[0] && ranked[0].n)).slice(0, 8);
+  box.innerHTML = top.length
+    ? `<div class="hint" style="margin:0 0 8px">아직 다 겹치는 시간은 없어요. 지금 제일 많이 되는 시간은 ${ps.length}명 중 ${top[0].n}명이에요.</div>
+       <div class="chips">${top.map((r) => `<span class="chip ok">${slotText(r.d, r.h)}</span>`).join("")}</div>`
+    : `<span class="empty-msg">아직 '돼요'로 체크된 칸이 없어요.</span>`;
+}
+
+// ---------- 이벤트 ----------
+$("grid").addEventListener("click", (e) => {
+  const b = e.target.closest(".half");
+  if (!b) return;
+  const d = +b.dataset.d, h = b.dataset.h;
+  if (mode === "mine") cycle(d, h);
+  else { selected = selected === slotKey(d, h) ? null : slotKey(d, h); render(); }
+});
+
+document.querySelectorAll(".tab").forEach((t) => t.addEventListener("click", () => {
+  document.querySelectorAll(".tab").forEach((x) => x.classList.toggle("on", x === t));
+  mode = t.dataset.mode; selected = null; render();
+}));
+
+function saveName() {
+  const v = $("nameInput").value.trim();
+  if (!v) { $("nameInput").focus(); return; }
+  myName = v;
+  localStorage.setItem(LS_NAME, v);
+  $("nameHint").classList.remove("warn");
+  const existing = users[keyOf(v)];
+  toast(existing ? `${v}의 체크를 불러왔어요` : `${v}, 이제 되는 시간을 눌러 줘`);
+  render();
+}
+$("nameSave").addEventListener("click", saveName);
+$("nameInput").addEventListener("keydown", (e) => { if (e.key === "Enter") saveName(); });
+$("nameChange").addEventListener("click", () => {
+  $("nameInput").value = myName;
+  myName = ""; localStorage.removeItem(LS_NAME); render(); $("nameInput").focus();
+});
+$("clearMine").addEventListener("click", () => {
+  if (confirm(`${myName}의 체크를 전부 지울까요?`)) { deleteMine(); toast("지웠어요"); }
+});
+$("copyLink").addEventListener("click", async () => {
+  try { await navigator.clipboard.writeText(location.href); toast("링크를 복사했어요"); }
+  catch { prompt("이 주소를 복사해서 보내 주세요", location.href); }
+});
+
+// ---------- 시작 ----------
+$("monthTitle").textContent = `${YEAR}년 ${MONTH}월`;
+document.title = `${MONTH}월 언제 돼?`;
+document.querySelector("h1").textContent = `${MONTH}월 언제 돼?`;
+if (LOCAL) { $("localBanner").hidden = false; setStatus("local", "미리보기 모드 (이 기기에만 저장)"); }
+render();
+refresh();
+if (!LOCAL) {
+  setInterval(() => { if (!document.hidden) refresh(); }, POLL_MS);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) refresh(); });
+}
+</script>
+</body>
+</html>
